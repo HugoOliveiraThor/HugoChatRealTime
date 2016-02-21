@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Hugo teste chat socket.io</title>
+    <style>
+        #mensagens,#usuarios{
+            width:500px;
+            float:left;
+            height: 400px;
+            border:1px solid black;
+            padding : 5px;
+            overflow: scroll;
+            overflow-x:hidden;
+        }
+        #usuarios {
+            width: 200px;
+        }
+        #mensagensForm{
+            clear:both;
+        }
+    </style>
+</head>
+<body>
+        <div id="telaUsername">
+            <form id="informeUsuarioform">
+                <h3>Escreva seu nick:</h3>
+                <input type="text" size="30" id="nickname" placeholder="Digite seu nick" required />
+                <input type="submit" value="Entrar" />
+            </form>
+        </div>
+        <div id="salaChat">
+            <div id="mensagens"></div>
+            <div id="usuarios"></div>
+            <form id="mensagensForm">
+                <input type="text" size="40" id="cpMensagem" required />
+                <input type="submit" value="Enviar"/>
+            </form>
+        </div>
+<script src="http://code.jquery.com/jquery-latest.min.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    $(function(){
+        var socket = io.connect();
+        var salaChat = $("#salaChat");
+        var nickname = $("#nickname");
+        var telaUsername = $("#telaUsername");
+        var informeUsuarioform = $("#informeUsuarioform");
+        var mensagensForm = $("#mensagensForm");
+        var cpMensagem = $("#cpMensagem");
+        var divMensagens = $("#mensagens");
+        var divUsuarios = $("#usuarios");
+
+        salaChat.hide();
+
+        informeUsuarioform.submit(function(e){
+            e.preventDefault();
+            socket.emit('novo usuario',nickname.val(),function(data){
+                if(data.retorno){
+                    telaUsername.hide();
+                    salaChat.show();
+                    cpMensagem.focus();
+                }else{
+                    alert(data.msg);
+                    nickname.val("");
+                }
+            });
+            mensagensForm.submit(function(e){
+                e.preventDefault();
+                socket.emit('enviar mensagem',cpMensagem.val());
+                cpMensagem.val("");
+            });
+            socket.on('nova mensagem',function(data){
+                divMensagens.append("<strong>"+data.nick+":</strong>"+data.msg);
+            });
+            socket.on('atualiza usuarios',function(usuarios){
+                var listaUsuarios = "<ul>";
+                $.each(usuarios,function(val,key){
+                    listaUsuarios += "<li>"+key+"</li>";
+                });
+                listaUsuarios +="</ul>";
+                //vai gerar uma atualização para nós !
+                divUsuarios.empty().append(listaUsuarios);
+            });
+        });
+
+    });
+</script>
+
+</body>
+</html>
